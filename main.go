@@ -16,7 +16,7 @@ var (
 	startDate        = time.Now()
 	isCreate         = true
 )
-
+// main
 func main() {
 	for i := 0; i < len(os.Args); i++ {
 		switch os.Args[i] {
