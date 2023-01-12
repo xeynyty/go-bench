@@ -2,7 +2,8 @@
 
 ## Application
 
-    ./nameOfAppFile -url localhost:8080 -rps 100
+    ./ddos -url localhost:8080 -rps 100
+
 - URL set endpoint
 - RPS set count of requests in one second (0 to DDOS)
 
@@ -25,3 +26,13 @@
         // stop sending request
         test.Stop()
     }
+
+# How to compile application?
+
+Clone repo
+
+    git clone https://github.com/xeynyty/go-ddos
+
+Compile (GO >= 1.19 recommended)
+
+    go build -o ddos main.go
