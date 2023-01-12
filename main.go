@@ -1,82 +1,46 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
-	"net/http"
+	"http_tester/pkg/bench"
 	"os"
-	"strings"
-	"time"
+	"os/signal"
+	"syscall"
 )
 
-var (
-	url       string
-	reqCount  uint64 = 0
-	errCount  uint64 = 0
-	startDate        = time.Now()
-	isCreate         = true
-)
-// main
 func main() {
-	for i := 0; i < len(os.Args); i++ {
-		switch os.Args[i] {
-		case "--url":
-			existParam := strings.Contains(os.Args[i+1], "--")
-			if i+1 < len(os.Args) && !existParam {
-				url = os.Args[i+1]
-				fmt.Println("  >  url:", url)
-				i++
-			} else {
-				log.Fatal(" > url not set")
-			}
-		}
+
+	url := flag.String(
+		"url",
+		"localhost:8080",
+		"set endpoint like a localhost:8080 or https//google.com")
+	reqPerSec := flag.Uint(
+		"rps",
+		100,
+		"set a count of request per second\n"+
+			"not more than 65535")
+	flag.Parse()
+
+	println(*url, *reqPerSec)
+	b := bench.New(
+		*url,
+		uint16(*reqPerSec))
+
+	b.Start()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+		syscall.SIGALRM)
+
+	select {
+	case <-sigChan:
+		fmt.Print("\n")
+		b.Stop()
+		os.Exit(0)
 	}
-
-	go func() {
-		for {
-			go request()
-			if !isCreate {
-				break
-			}
-		}
-	}()
-
-	func() {
-		var cmd string
-		for {
-			fmt.Scan(&cmd)
-			switch cmd {
-			case "stop":
-				isCreate = false
-				end()
-			}
-		}
-	}()
-}
-
-func request() {
-	_, err := http.Get(url)
-	if err != nil {
-		errCount += 1
-	}
-	reqCount += 1
-	return
-}
-
-func end() {
-	workTime := time.Now().Sub(startDate)
-
-	fmt.Print("\n\n")
-	fmt.Println(" > works:", workTime.Seconds(), "sec.")
-	fmt.Println("=<>==<>==<>==<>==<>==<>==<>==<>==<>==<>==<>==<>=")
-	fmt.Println(" > requests:", reqCount)
-	fmt.Println(" > request per second:", float32(reqCount)/float32(workTime.Seconds()))
-	fmt.Println("=<>==<>==<>==<>==<>==<>==<>==<>==<>==<>==<>==<>=")
-	fmt.Println(" > errors:", errCount)
-	fmt.Println(" > error per second:", float32(errCount)/float32(workTime.Seconds()))
-	fmt.Println("=<>==<>==<>==<>==<>==<>==<>==<>==<>==<>==<>==<>=")
-
-	procentErrors := (float32(errCount) / float32(reqCount)) * 100
-	fmt.Println(" > errors % =", procentErrors)
-	os.Exit(0)
 }
