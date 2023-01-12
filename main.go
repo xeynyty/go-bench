@@ -1,9 +1,9 @@
 package main
 
 import (
+	"ddos/pkg/bench"
 	"flag"
 	"fmt"
-	"http_tester/pkg/bench"
 	"os"
 	"os/signal"
 	"syscall"

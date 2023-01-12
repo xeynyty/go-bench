@@ -1,3 +1,3 @@
-module http_tester
+module ddos
 
 go 1.19
