@@ -14,15 +14,41 @@ type Bench struct {
 	errCount         uint64
 	requestPerSecond uint16
 }
+type Result struct {
+	ReqCount        uint64  `json:"req_count"`
+	ErrCount        uint64  `json:"err_count"`
+	PercentOfErrors float32 `json:"percent_of_errors"`
+}
 
+// Start of bench
 func (b *Bench) Start() {
 	go b.bench()
 }
-func (b *Bench) Stop() {
+
+// Stop of bench
+func (b *Bench) Stop() *Result {
 	b.contextCancel()
-	println("err:", b.errCount, "\nreq", b.reqCount)
+	return &Result{
+		ReqCount:        b.reqCount,
+		ErrCount:        b.errCount,
+		PercentOfErrors: percentOfErrors(b.reqCount, b.errCount),
+	}
 }
 
+// New create Bench struct object
+func New(url string, reqPerSec uint16) *Bench {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &Bench{
+		url:              url,
+		context:          ctx,
+		contextCancel:    cancel,
+		reqCount:         0,
+		errCount:         0,
+		requestPerSecond: reqPerSec,
+	}
+}
+
+// bench is a main func in lib
 func (b *Bench) bench() {
 	defer b.contextCancel()
 
@@ -52,6 +78,7 @@ exit:
 	}
 }
 
+// request is only 1 req in func for bench func
 func (b *Bench) request() {
 	b.reqCount += 1
 	_, err := http.Get(b.url)
@@ -60,14 +87,6 @@ func (b *Bench) request() {
 	}
 }
 
-func New(url string, reqPerSec uint16) *Bench {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &Bench{
-		url:              url,
-		context:          ctx,
-		contextCancel:    cancel,
-		reqCount:         0,
-		errCount:         0,
-		requestPerSecond: reqPerSec,
-	}
+func percentOfErrors(req, err uint64) float32 {
+	return (float32(err) / float32(req)) * 100.0
 }

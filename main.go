@@ -2,6 +2,7 @@ package main
 
 import (
 	"ddos/pkg/bench"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -22,7 +23,8 @@ func main() {
 			"not more than 65535")
 	flag.Parse()
 
-	println(*url, *reqPerSec)
+	fmt.Printf(" Host: %v\n RPS: %v\n", *url, *reqPerSec)
+
 	b := bench.New(
 		*url,
 		uint16(*reqPerSec))
@@ -40,7 +42,15 @@ func main() {
 	select {
 	case <-sigChan:
 		fmt.Print("\n")
-		b.Stop()
+
+		res := b.Stop()
+
+		resByte, err := json.Marshal(res)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(resByte))
+
 		os.Exit(0)
 	}
 }
