@@ -1,7 +1,7 @@
 .PHONY: build
 
 build-windows:
-	GOOS=windows GOARCH=amd64 go build -o ./build/ddos-win main.go
+	GOOS=windows GOARCH=amd64 go build -o ./build/ddos-win.exe main.go
 
 build-linux:
 	GOOS=linux GOARCH=amd64 go build -o ./build/ddos-linux main.go
