@@ -1,10 +1,10 @@
 package main
 
 import (
-	"ddos/pkg/bench"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/xeynyty/go-ddos/pkg/bench"
 	"os"
 	"os/signal"
 	"syscall"
