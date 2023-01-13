@@ -57,7 +57,7 @@ func (b *Bench) bench() {
 		waitTime = time.Second / time.Duration(b.requestPerSecond)
 	}
 	if b.requestPerSecond == 0 {
-		waitTime = time.Second / 100
+		waitTime = time.Nanosecond
 	}
 
 	timer := time.NewTimer(waitTime)
