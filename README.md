@@ -5,7 +5,7 @@
     ./bench -url localhost:8080 -rps 100
 
 - URL set endpoint
-- RPS set count of requests in one second (max is 255)
+- RPS set count of requests in one second (max is 65535)
 
 # How to compile application?
 

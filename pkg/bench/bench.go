@@ -2,7 +2,7 @@ package bench
 
 import (
 	"context"
-	"net/http"
+	"github.com/valyala/fasthttp"
 	"sync"
 	"time"
 )
@@ -14,7 +14,7 @@ type Bench struct {
 	reqCount         uint64
 	errCount         uint64
 	startTime        time.Time
-	requestPerSecond uint8
+	requestPerSecond uint16
 }
 type Result struct {
 	ReqCount            uint64  `json:"req_count"`
@@ -40,9 +40,7 @@ func (b *Bench) Start() {
 // Stop of bench
 func (b *Bench) Stop() *Result {
 	b.contextCancel()
-
 	wg.Wait()
-
 	return &Result{
 		ReqCount:            b.reqCount,
 		ErrCount:            b.errCount,
@@ -55,7 +53,7 @@ func (b *Bench) Stop() *Result {
 }
 
 // New create Bench struct object
-func New(url string, reqPerSec uint8) *Bench {
+func New(url string, reqPerSec uint16) *Bench {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Bench{
 		url:              url,
@@ -107,14 +105,14 @@ func (b *Bench) request() {
 		wg.Done()
 		return
 	default:
-		start := time.Now()
+		sendTime := time.Now()
 		b.reqCount += 1
-		_, err := http.Get(b.url)
+		//_, err := http.Get(b.url)
+		_, _, err := fasthttp.Get(nil, b.url)
 		if err != nil {
 			b.errCount += 1
 		}
-
-		responseTimeChan <- float32(time.Now().Sub(start).Milliseconds())
+		responseTimeChan <- float32(time.Now().Sub(sendTime).Milliseconds())
 	}
 }
 
@@ -129,29 +127,7 @@ func (b *Bench) responseTime(ch <-chan float32) {
 				wg.Done()
 				return
 			default:
-				//select {
-				//case data, ok := <-ch:
-				//	if !ok {
-				//		fmt.Println("chan close")
-				//		wg.Done()
-				//		return
-				//	}
-				//	responseTime = append(responseTime, data)
-				//	wg.Done()
-				//}
 				for data := range ch {
-					//if b.requestPerSecond >= 500 {
-					//	if len(tempSlice) < cap(tempSlice) {
-					//		tempSlice = append(tempSlice, data)
-					//		wg.Done()
-					//		continue
-					//	}
-					//	fmt.Println("append!", len(tempSlice))
-					//	responseTime = append(responseTime, averageResponseTime(tempSlice))
-					//	tempSlice = make([]float32, 0, 100)
-					//	wg.Done()
-					//	continue
-					//}
 					responseTime = append(responseTime, data)
 					wg.Done()
 				}
