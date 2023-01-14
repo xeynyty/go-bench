@@ -20,14 +20,14 @@ func main() {
 		"rps",
 		100,
 		"set a count of request per second\n"+
-			"not more than 65535")
+			"not more than 255")
 	flag.Parse()
 
 	fmt.Printf(" Host: %v\n RPS: %v\n", *url, *reqPerSec)
 
 	b := bench.New(
 		*url,
-		uint16(*reqPerSec))
+		uint8(*reqPerSec))
 
 	b.Start()
 

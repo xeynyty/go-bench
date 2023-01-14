@@ -5,7 +5,7 @@
     ./ddos -url localhost:8080 -rps 100
 
 - URL set endpoint
-- RPS set count of requests in one second (0 to DDOS)
+- RPS set count of requests in one second (max is 255)
 
 # How to compile application?
 
