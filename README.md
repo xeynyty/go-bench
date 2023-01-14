@@ -1,4 +1,4 @@
-# HTTP(s) bench / DDOS
+# HTTP(s) bench
 
 ## Application
 
@@ -11,8 +11,8 @@
 
 Clone repo
 
-    git clone https://github.com/xeynyty/go-ddos
+    git clone https://github.com/xeynyty/go-bench
 
 Compile (GO >= 1.19 recommended)
 
-    go build -o ddos main.go
+    go build -o bench main.go
