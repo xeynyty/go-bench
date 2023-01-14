@@ -107,7 +107,6 @@ func (b *Bench) request() {
 	default:
 		sendTime := time.Now()
 		b.reqCount += 1
-		//_, err := http.Get(b.url)
 		_, _, err := fasthttp.Get(nil, b.url)
 		if err != nil {
 			b.errCount += 1
