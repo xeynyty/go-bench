@@ -6,6 +6,9 @@
 
     ./file_name -url localhost:8080 -rps 100
 
+- URL set endpoint
+- RPS set count of requests in one second (max is 65535)
+
 Result:
 
     Host: localhost:8080
@@ -22,7 +25,3 @@ Result:
         "time_of_bench_sec":3.085026,
         "percent_of_errors":100
     }
-
-
-- URL set endpoint
-- RPS set count of requests in one second (max is 65535)
