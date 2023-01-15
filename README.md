@@ -17,11 +17,11 @@ Result:
     ^C       // Ctrl + C for stop
 
     {
-        "req_count":282,
-        "err_count":282,
-        "average_response_time_ms":0,
-        "max_response_time_ms":0,
-        "min_response_time_ms":0,
-        "time_of_bench_sec":3.085026,
-        "percent_of_errors":100
+        "req_count":259,
+        "err_count":0,
+        "average_response_time_ms":57.96139,
+        "max_response_time_ms":265,
+        "min_response_time_ms":38,
+        "time_of_bench_sec":2.7747707,
+        "percent_of_errors":0
     }
