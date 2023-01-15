@@ -44,7 +44,7 @@ func (b *Bench) Stop() *Result {
 	return &Result{
 		ReqCount:            b.reqCount,
 		ErrCount:            b.errCount,
-		PercentOfErrors:     percentOfErrors(b.reqCount, b.errCount),
+		PercentOfErrors:     percentOfErrors(&b.reqCount, &b.errCount),
 		AverageResponseTime: averageResponseTime(responseTime),
 		MaxResponseTime:     maxResponseTime(),
 		TimeOfBench:         b.benchTime(),
@@ -141,11 +141,11 @@ func (b *Bench) benchTime() float32 {
 	return float32(time.Now().Sub(b.startTime).Seconds())
 }
 
-func percentOfErrors(req, err uint64) float32 {
-	if req == 0 || err == 0 {
+func percentOfErrors(req, err *uint64) float32 {
+	if *req == 0 || *err == 0 {
 		return 0
 	}
-	return (float32(err) / float32(req)) * 100.0
+	return (float32(*err) / float32(*req)) * 100.0
 }
 func averageResponseTime(slice []float32) float32 {
 	var average float32 = 0

@@ -11,23 +11,22 @@ import (
 )
 
 func main() {
-
 	url := flag.String(
 		"url",
 		"localhost:8080",
 		"set endpoint like a localhost:8080 or https//google.com")
-	reqPerSec := flag.Uint(
+	reqPerSec := uint16(*flag.Uint(
 		"rps",
 		100,
 		"set a count of request per second\n"+
-			"not more than 65535")
+			"not more than 65535"))
 	flag.Parse()
 
-	fmt.Printf(" Host: %v\n RPS: %v\n", *url, uint16(*reqPerSec))
+	fmt.Printf(" Host: %v\n RPS: %v\n", *url, reqPerSec)
 
 	b := bench.New(
 		*url,
-		uint16(*reqPerSec))
+		reqPerSec)
 
 	b.Start()
 
