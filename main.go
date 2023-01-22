@@ -15,12 +15,16 @@ func main() {
 		"url",
 		"localhost:8080",
 		"set endpoint like a localhost:8080 or https//google.com")
-	reqPerSec := uint16(*flag.Uint(
+
+	rps := flag.Uint(
 		"rps",
 		100,
 		"set a count of request per second\n"+
-			"not more than 65535"))
+			"not more than 65535")
+
 	flag.Parse()
+
+	reqPerSec := uint16(*rps)
 
 	fmt.Printf(" Host: %v\n RPS: %v\n", *url, reqPerSec)
 

@@ -8,13 +8,14 @@ import (
 )
 
 type Bench struct {
-	url              string
-	context          context.Context
-	contextCancel    context.CancelFunc
-	reqCount         uint64
-	errCount         uint64
-	startTime        time.Time
-	requestPerSecond uint16
+	url                 string
+	context             context.Context
+	contextCancel       context.CancelFunc
+	startTime           time.Time
+	reqCount            uint64
+	errCount            uint64
+	requestPerSecond    uint16
+	responseTimePointer *[]float32
 }
 type Result struct {
 	ReqCount            uint64  `json:"req_count"`
@@ -27,14 +28,49 @@ type Result struct {
 }
 
 var (
-	responseTime     = make([]float32, 0, 1000000)
-	responseTimeChan = make(chan float32, 1000000)
-	wg               = sync.WaitGroup{}
+	wg = sync.WaitGroup{}
 )
 
 // Start of bench
 func (b *Bench) Start() {
-	go b.bench()
+	go func() {
+		var (
+			responseTimeChan = make(chan float32, b.requestPerSecond*10)
+		)
+
+		b.startTime = time.Now()
+		b.responseTime(responseTimeChan)
+
+		defer func() {
+			b.contextCancel()
+			close(responseTimeChan)
+		}()
+
+		var waitTime time.Duration
+		if b.requestPerSecond != 0 {
+			waitTime = time.Second / time.Duration(b.requestPerSecond)
+		}
+		if b.requestPerSecond == 0 {
+			waitTime = time.Nanosecond
+		}
+
+		timer := time.NewTimer(waitTime)
+
+		for {
+			select {
+			case <-b.context.Done():
+				break
+			default:
+				select {
+				case <-timer.C:
+					wg.Add(1)
+					go b.request(responseTimeChan)
+					timer.Reset(waitTime)
+				}
+			}
+
+		}
+	}()
 }
 
 // Stop of bench
@@ -45,61 +81,15 @@ func (b *Bench) Stop() *Result {
 		ReqCount:            b.reqCount,
 		ErrCount:            b.errCount,
 		PercentOfErrors:     percentOfErrors(&b.reqCount, &b.errCount),
-		AverageResponseTime: averageResponseTime(responseTime),
-		MaxResponseTime:     maxResponseTime(),
+		AverageResponseTime: averageResponseTime(*b.responseTimePointer),
+		MaxResponseTime:     b.maxResponseTime(),
 		TimeOfBench:         b.benchTime(),
-		MinResponseTime:     minResponseTime(),
-	}
-}
-
-// New create Bench struct object
-func New(url string, reqPerSec uint16) *Bench {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &Bench{
-		url:              url,
-		context:          ctx,
-		contextCancel:    cancel,
-		reqCount:         0,
-		errCount:         0,
-		requestPerSecond: reqPerSec,
-	}
-}
-
-// bench is a main func in lib
-func (b *Bench) bench() {
-	b.startTime = time.Now()
-	b.responseTime(responseTimeChan)
-	defer b.contextCancel()
-	defer close(responseTimeChan)
-
-	var waitTime time.Duration
-	if b.requestPerSecond != 0 {
-		waitTime = time.Second / time.Duration(b.requestPerSecond)
-	}
-	if b.requestPerSecond == 0 {
-		waitTime = time.Nanosecond
-	}
-
-	timer := time.NewTimer(waitTime)
-
-	for {
-		select {
-		case <-b.context.Done():
-			break
-		default:
-			select {
-			case <-timer.C:
-				wg.Add(1)
-				go b.request()
-				timer.Reset(waitTime)
-			}
-		}
-
+		MinResponseTime:     b.minResponseTime(),
 	}
 }
 
 // request is only 1 req in func for bench func
-func (b *Bench) request() {
+func (b *Bench) request(ch chan<- float32) {
 	select {
 	case <-b.context.Done():
 		wg.Done()
@@ -107,11 +97,14 @@ func (b *Bench) request() {
 	default:
 		sendTime := time.Now()
 		b.reqCount += 1
+
+		// TODO add status code in result
+
 		_, _, err := fasthttp.Get(nil, b.url)
 		if err != nil {
 			b.errCount += 1
 		}
-		responseTimeChan <- float32(time.Now().Sub(sendTime).Milliseconds())
+		ch <- float32(time.Now().Sub(sendTime).Milliseconds())
 	}
 }
 
@@ -127,7 +120,7 @@ func (b *Bench) responseTime(ch <-chan float32) {
 				return
 			default:
 				for data := range ch {
-					responseTime = append(responseTime, data)
+					*b.responseTimePointer = append(*b.responseTimePointer, data)
 					wg.Done()
 				}
 			}
@@ -139,6 +132,39 @@ func (b *Bench) responseTime(ch <-chan float32) {
 // of the benchmark to the execution of Stop
 func (b *Bench) benchTime() float32 {
 	return float32(time.Now().Sub(b.startTime).Seconds())
+}
+func (b *Bench) maxResponseTime() float32 {
+	var max float32 = 0
+	for _, item := range *b.responseTimePointer {
+		if item > max {
+			max = item
+		}
+	}
+	return max
+}
+func (b *Bench) minResponseTime() float32 {
+	var min float32 = 100000.0
+	for _, item := range *b.responseTimePointer {
+		if item < min {
+			min = item
+		}
+	}
+	return min
+}
+
+// New create Bench struct object
+func New(url string, reqPerSec uint16) *Bench {
+	ctx, cancel := context.WithCancel(context.Background())
+	responseTime := make([]float32, 0, reqPerSec*10)
+	return &Bench{
+		url:                 url,
+		context:             ctx,
+		contextCancel:       cancel,
+		reqCount:            0,
+		errCount:            0,
+		requestPerSecond:    reqPerSec,
+		responseTimePointer: &responseTime,
+	}
 }
 
 func percentOfErrors(req, err *uint64) float32 {
@@ -154,22 +180,4 @@ func averageResponseTime(slice []float32) float32 {
 	}
 	average = average / float32(len(slice))
 	return average
-}
-func maxResponseTime() float32 {
-	var max float32 = 0
-	for _, item := range responseTime {
-		if item > max {
-			max = item
-		}
-	}
-	return max
-}
-func minResponseTime() float32 {
-	var min float32 = 100000.0
-	for _, item := range responseTime {
-		if item < min {
-			min = item
-		}
-	}
-	return min
 }
